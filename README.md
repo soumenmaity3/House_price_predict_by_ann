@@ -66,8 +66,7 @@ Saved using pickle & Keras:
 House-Rent-Prediction/
 │
 ├── Notebook/
-│   ├── data_cleaning.ipynb
-│   ├── model_training.ipynb
+│   ├── 1_check_data.ipynb
 │   ├── app.py
 │   ├── model.h5
 │   ├── lb_encoder.pkl
