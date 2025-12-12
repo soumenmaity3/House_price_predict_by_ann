@@ -59,3 +59,19 @@ Saved using pickle & Keras:
 
 # 📁 Project Structure
 
+House-Rent-Prediction/
+│
+├── Notebook/
+│ ├── data_cleaning.ipynb
+│ ├── model_training.ipynb
+│ ├── app.py
+│ ├── model.h5
+│ ├── lb_encoder.pkl
+│ ├── one_encoder.pkl
+│ ├── scaler.pkl
+│
+├── Data/
+│ ├── House_Rent_Dataset.csv
+│
+├── README.md
+├── requirements.txt
