@@ -241,15 +241,10 @@ If this project helped you, please **star ⭐ the repository** — it encourages
 
 For questions, suggestions, or collaboration:
 
-**Email:** yourname@gmail.com
+**Email:** sm8939912@gmail.com
 
-**GitHub:** [github.com/yourusername](https://github.com/yourusername)
+**GitHub:** [github.com/soumenmaity3](https://github.com/soumenmaity3)
 
----
-
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
