@@ -5,6 +5,7 @@ import tensorflow as tf
 import pickle
 import os
 from difflib import get_close_matches
+import time
 
 
 from rapidfuzz import process
@@ -45,7 +46,7 @@ def load_pickle(path):
 # Load Model & Preprocessors
 # -------------------------
 # --- FIX APPLIED HERE: Changed extension to .h5 ---
-MODEL_PATH = "model.h5" 
+MODEL_PATH = "Notebook\model.h5" 
 
 if not os.path.exists(MODEL_PATH):
     st.error(f"❌ Model file not found: **{MODEL_PATH}**. Please ensure it exists.")
@@ -60,9 +61,9 @@ except Exception as e:
 
 
 # Load the preprocessors
-locality_encoder = load_pickle("lb_encoder.pkl")
-onehot_encoder = load_pickle("one_encoder.pkl")
-scaler = load_pickle("scaler.pkl")
+locality_encoder = load_pickle("Notebook\lb_encoder.pkl")
+onehot_encoder = load_pickle("Notebook\one_encoder.pkl")
+scaler = load_pickle("Notebook\scaler.pkl")
 
 # keep a list of locality names for suggestions
 _localities = list(locality_encoder.classes_)
@@ -163,7 +164,11 @@ def input_checks(bhk, size, bathrooms, current_floor, total_floors, locality_tex
 # Prediction Logic
 # -------------------------
 if submit:
-
+    
+    # ========== ANIMATION START ==========
+    with st.spinner("🔍 Validating inputs..."):
+        time.sleep(0.5)
+    
     # Run checks
     errors, warnings = input_checks(bhk, size, bathrooms, current_floor, total_floors, locality_text)
 
@@ -177,70 +182,86 @@ if submit:
             st.error("❌ " + e)
         st.stop()
 
-    # Locality handling: check if user-entered locality exists
-    try:
-        locality_id = locality_encoder.transform([locality_text])[0]
-        locality_found = True
-    except ValueError:
-        locality_found = False
-        st.warning(f"❌ Locality '{locality_text}' not found in training data.")
+    # ========== LOCALITY PROCESSING ANIMATION ==========
+    with st.spinner("📍 Verifying locality..."):
+        time.sleep(0.3)
+        
+        # Locality handling: check if user-entered locality exists
+        try:
+            locality_id = locality_encoder.transform([locality_text])[0]
+            locality_found = True
+        except ValueError:
+            locality_found = False
+            st.warning(f"❌ Locality '{locality_text}' not found in training data.")
 
-    # Suggest the closest matches using fuzzy matching
-        suggestions = find_similar_localities(locality_text, _localities, limit=5)
+        # Suggest the closest matches using fuzzy matching
+            suggestions = find_similar_localities(locality_text, _localities, limit=5)
 
-        if suggestions:
-            st.info("Did you mean one of these?")
-            picked = st.selectbox(
-                "Select correct locality (or keep typed one):",
-                ["-- Keep typed value --"] + suggestions
-            )
+            if suggestions:
+                st.info("Did you mean one of these?")
+                picked = st.selectbox(
+                    "Select correct locality (or keep typed one):",
+                    ["-- Keep typed value --"] + suggestions
+                )
 
-            if picked != "-- Keep typed value --":
-                locality_text = picked
-                locality_id = locality_encoder.transform([picked])[0]
-                locality_found = True
+                if picked != "-- Keep typed value --":
+                    locality_text = picked
+                    locality_id = locality_encoder.transform([picked])[0]
+                    locality_found = True
 
-        if not locality_found:
-            st.error("❌ No exact locality match. Please re-type locality correctly.")
-            st.stop()
+            if not locality_found:
+                st.error("❌ No exact locality match. Please re-type locality correctly.")
+                st.stop()
 
-    # One-hot encode categorical inputs
-    onehot_input = [[area_type, city, furnishing]]
-    onehot_output = onehot_encoder.transform(onehot_input) 
+    # ========== DATA PREPROCESSING ANIMATION ==========
+    with st.spinner("⚙️ Processing features..."):
+        time.sleep(0.4)
+        
+        # One-hot encode categorical inputs
+        onehot_input = [[area_type, city, furnishing]]
+        onehot_output = onehot_encoder.transform(onehot_input) 
 
-    onehot_df = pd.DataFrame(
-        onehot_output,
-        columns=onehot_encoder.get_feature_names_out(["Area Type", "City", "Furnishing Status"])
-    )
+        onehot_df = pd.DataFrame(
+            onehot_output,
+            columns=onehot_encoder.get_feature_names_out(["Area Type", "City", "Furnishing Status"])
+        )
 
-    # Numeric data
-    numeric = pd.DataFrame({
-        "BHK": [bhk],
-        "Size": [size],
-        "Bathroom": [bathrooms],
-        "Current_Floor": [current_floor],
-        "Total_Floors": [total_floors],
-        "bachelor": [int(bachelor)],
-        "family": [int(family)]
-    })
+        # Numeric data
+        numeric = pd.DataFrame({
+            "BHK": [bhk],
+            "Size": [size],
+            "Bathroom": [bathrooms],
+            "Current_Floor": [current_floor],
+            "Total_Floors": [total_floors],
+            "bachelor": [int(bachelor)],
+            "family": [int(family)]
+        })
 
-    numeric_cols = ["BHK", "Size", "Bathroom", "Current_Floor", "Total_Floors"]
+        numeric_cols = ["BHK", "Size", "Bathroom", "Current_Floor", "Total_Floors"]
 
-    # Scale only numeric columns
-    numeric_scaled = numeric.copy()
-    numeric_scaled[numeric_cols] = scaler.transform(numeric[numeric_cols])
+        # Scale only numeric columns
+        numeric_scaled = numeric.copy()
+        numeric_scaled[numeric_cols] = scaler.transform(numeric[numeric_cols])
 
-    # Combine all non-locality features
-    other_features = pd.concat([numeric_scaled, onehot_df], axis=1)
-    other_np = other_features.values
+        # Combine all non-locality features
+        other_features = pd.concat([numeric_scaled, onehot_df], axis=1)
+        other_np = other_features.values
 
-    # Locality input for embedding
-    locality_np = np.array([[locality_id]])
+        # Locality input for embedding
+        locality_np = np.array([[locality_id]])
 
-    # ---- sensitive prediction line: keep unchanged ----
-    pred_log = model.predict([locality_np, other_np], verbose=0)[0][0]
-    predicted_rent = np.expm1(pred_log)
-    # ----------------------------------------------------
+    # ========== MODEL PREDICTION ANIMATION ==========
+    with st.spinner("🤖 Running AI model prediction..."):
+        time.sleep(1.5)
+        
+        # ---- sensitive prediction line: keep unchanged ----
+        pred_log = model.predict([locality_np, other_np], verbose=0)[0][0]
+        predicted_rent = np.expm1(pred_log)
+        # ----------------------------------------------------
+
+    # ========== FINALIZING ANIMATION ==========
+    with st.spinner("✨ Finalizing results..."):
+        time.sleep(0.3)
 
     # -------------------------
     # Terminal Printout
